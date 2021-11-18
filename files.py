@@ -19,5 +19,3 @@ with open("compile.txt", 'w') as nf:
             lines = f.readlines()
             nf.writelines(lines)
             nf.write("\n")
-
-print(txt[1316])

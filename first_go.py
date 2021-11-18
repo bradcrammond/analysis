@@ -136,7 +136,7 @@ for i in range(len(tk)):
         else:
             sent_score[i][j] = 0
 
-        emot_count[i][j] = len(sent.affect_dict) ## count number of senti words8
+        emot_count[i][j] = len(sent.affect_dict) ## count number of senti words
 
 
 ##################################################################################################
