@@ -10,6 +10,7 @@ from nltk import tokenize
 from nltk.corpus import stopwords
 import numpy as np
 import nltk
+import matplotlib.pyplot as plt
 
 ##################################################################################
 ## Read in the text
@@ -31,7 +32,6 @@ for string in txt:
     txtn.append(new_string)
 
 txt = txtn
-
 
 ## Separate into sentences
 tk = []
@@ -57,6 +57,7 @@ for i in range(len(tk)):
         sw = len([d for d in w if d in stopwords.words('english')])
         stopw[i][j] = sw
 
+
 ## So now we have:
 #  the full text in one list (txt) 
 # it split into sentences in another (tk)
@@ -77,23 +78,15 @@ dy = []
 for i in range(len(txt)):
     dy.insert(i, re.findall("Doherty", txt[i]))
 
-dydf = pd.DataFrame(dy)
-dd = dydf.iloc[:, 0]
-dd.to_csv('doherty.csv')
-
 ## Check for mention of Blakely | Thompson
 bltm = []
 for i in range(len(txt)):
     bltm.insert(i, re.findall("Blakely|Thompson", txt[i]))
 
-bltmdf = pd.DataFrame(bltm)
-bl = bltmdf.iloc[:,0]
-bl.to_csv('blakely.csv')
 
 
 ## Extract Title
 title = re.findall("Title:(.*)", strings)
-
 
 ## Extract Publication 
 pub = re.findall("Publication title:(.*)", strings)
@@ -138,6 +131,36 @@ for i in range(len(tk)):
 
         emot_count[i][j] = len(sent.affect_dict) ## count number of senti words
 
+## Last (maybe) I need the sentiment score divided by the number of words in the sentence (not including stop words)
+
+sent_on_stop = np.zeros([a,b])
+
+for i in range(len(tk)):
+    for j in range(len(tk[i])):
+        sent_on_stop[i][j] = sent_score[i][j] / (swd[i][j] - stopw[i][j])
+
+ms = np.sum(sent_on_stop, axis=1)
+
+mean_sent = np.zeros([a,1])
+
+for i in range(len(tk)):
+    mean_sent[i] = ms[i] / len(tk[i])
+
+## Histogram to check the shape of it - looks quite nicely spread out.
+# n, bins, patches = plt.hist(x=mean_sent, bins='auto', color='#0504aa',
+#                             alpha=0.7, rwidth=0.85)
+# plt.grid(axis='y', alpha=0.75)
+# plt.xlabel('Value')
+# plt.ylabel('Frequency')
+# plt.title('Average Sentiment of Articles')
+# maxfreq = n.max()
+
+df = pd.DataFrame(mean_sent)
+df = df.rename(columns={0:'text_sentiment'})
+df['title'] = title
+df['publication'] = pub
+df['date'] = date
+
 
 ##################################################################################################
 ## Now the titles
@@ -148,15 +171,56 @@ title_emotion = []
 for i in range(len(title_output)):
     title_emotion.insert(i, title_output[i].raw_emotion_scores)
 
-## Put it all together for analysis
-actual_title = pd.DataFrame(title)
-title_df = pd.DataFrame(title_emotion)
-text_df = pd.DataFrame(txt_emotion)
-date_df = pd.DataFrame(date)
-pub_df = pd.DataFrame(pub)
+## Number of words in title
+twd = np.zeros([a,1])
+for i in range(len(title)):
+    g = len(tokenize.word_tokenize(title[i]))
+    twd[i] = g
 
-actual_title.to_csv('actual_title.csv')
-title_df.to_csv('title_SA.csv')
-text_df.to_csv('text_SA.csv')
-date_df.to_csv('date_SA.csv')
-pub_df.to_csv('pub_SA.csv')
+
+## Next is to remove stop words and then get a new count of the sentence
+ttopw = np.zeros([a,1])
+
+for i in range(len(title)):
+    w = tokenize.word_tokenize(title[i])
+    sw = len([d for d in w if d in stopwords.words('english')])
+    ttopw[i] = sw
+
+df['title_word_count'] = twd
+df['title_stop_words'] = ttopw
+
+title_sent_score = np.zeros([a,1])       ## positive - negative sentiment
+title_fear_score = np.zeros([a,1])       ## count of fear words
+title_emot_count = np.zeros([a,1])       ## count of words in the sentence that are actually used for the sentiment analysis
+
+for i in range(len(title)):
+        sent = NRCLex(title[i])                 ## get the sentiment
+        emo = sent.raw_emotion_scores           ## extract scores
+        if 'fear' in emo:                       ## record fear (if there)
+            title_fear_score[i]= emo['fear']
+        else:
+            title_fear_score[i] = 0
+                                                ## record positive - negative
+        if all(key in emo for key in ('positive', 'negative')): 
+            title_sent_score[i] = emo['positive'] - emo['negative']
+        elif 'positive' in emo:
+            title_sent_score[i] = emo['positive']
+        elif 'negative' in emo:
+            title_sent_score[i] = 0 - emo['negative']
+        else:
+            title_sent_score[i] = 0
+
+        title_emot_count[i] = len(sent.affect_dict) ## count number of senti words
+
+df['title_sent'] = title_sent_score
+df['title_fear'] = title_fear_score
+
+mean_title_sent = title_sent_score / twd
+
+df['mean_title_sent'] = mean_title_sent
+
+df['Burnet'] = bt
+df['Doherty'] = dy
+df['Blakely'] = bltm
+
+df.to_csv('Modelling_Sentiment.csv')
