@@ -1,4 +1,5 @@
 /newsstream
+/newsstream-old
 /.venv
 .Rproj.user
 .venv/bin/activate
