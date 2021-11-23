@@ -19,19 +19,59 @@ with open('compile.txt', encoding="utf8") as f:
 
 strings = ''.join(lines)    ## convert to string
 
+####################################################################################
+## 
+##                     Extract the relevant fields
+##
+####################################################################################
+
+## Title
+title = re.findall("Title:(.*)", strings)
+
+## Extract Publication 
+pub = re.findall("Publication title:(.*)", strings)
+
+## Date
+date = re.findall("Publication date:(.*)", strings)
 
 ## Extract full text
-txt = re.findall("(?s)(Full text:.*?)(?:(?:\\r*\\n){2}|(?:IN OTHER NEWS:)|(?:READ MORE:)|(?:^How today unfolded))", strings)
+txt = re.findall("(?s)(Full text:.*?)(?:(?:\\r*\\n){2}|(?:IN OTHER NEWS)|(?:READ MORE:)|(?:^How today unfolded))", strings)
 
-## txt = [(a) for (a,b,c,d) in txt] 
-## Needed this before I figured out how to stop at in other news.
-
+## Get rid of the 'Full text:' bit at the start
 txtn = []
 for string in txt:
     new_string = string.replace("Full text:", "")
     txtn.append(new_string)
 
 txt = txtn
+
+df = pd.DataFrame(title)
+df = df.rename(columns={0:'title'})
+df['publication'] = pub
+df['date'] = date
+
+####################################################################################
+## Check the results          
+
+## Make sure everything still includes the search terms
+r = re.compile(".*(modelling).*", re.IGNORECASE)
+ftxt = list(filter(r.search, txt))
+
+check = list(set(txt) - set(ftxt))  ## which articles don't have 'modelling'
+
+exclude = np.zeros([len(txt),1])    ## create an index of articles
+
+for i in range(len(txt)):
+    exclude[i] = txt[i] in check    ## now there is a list where '0' means keep
+                                    ## and '1' means exclude.
+
+df['exclude'] = exclude
+
+####################################################################################
+##
+##                      Processing the Full Text
+##
+####################################################################################
 
 ## Separate into sentences
 tk = []
@@ -43,20 +83,31 @@ a = len(tk)
 b = max(map(len, tk))
 swd = np.zeros([a,b])
 
-for i in range(len(tk)):
+for i in range(len(tk)):                            ## Takes 3 minutes, relax
     for j in range(len(tk[i])):
         x = len(tokenize.word_tokenize(tk[i][j]))
         swd[i][j] = x
 
+## TODO Mean words per sentence per article
+
 ## Next is to remove stop words and then get a new count of the sentence
 stopw = np.zeros([a,b])
 
-for i in range(len(tk)):
+for i in range(len(tk)):                            ## Takes another 3 mins
     for j in range(len(tk[i])):
         w = tokenize.word_tokenize(tk[i][j])
         sw = len([d for d in w if d in stopwords.words('english')])
         stopw[i][j] = sw
 
+## TODO Mean non-stop words per sentence per article
+
+## Number of sentence per article
+sentence_per_article = np.zeros([a,1])
+
+for i in range(len(tk)):
+    sentence_per_article[i] = len(tk[i])
+
+df['sentence_per_article'] = sentence_per_article
 
 ## So now we have:
 #  the full text in one list (txt) 
@@ -71,28 +122,27 @@ for i in range(len(txt)):
 
 btdf = pd.DataFrame(bt)
 bb = btdf.iloc[:, 0]
-bb.to_csv('burnet.csv')
+df['Burnet'] = bb
 
 ## Check for mention of Doherty
 dy = []
 for i in range(len(txt)):
     dy.insert(i, re.findall("Doherty", txt[i]))
 
+dydf = pd.DataFrame(dy)
+dd = dydf.iloc[:,0]
+df['Doherty'] = dd
+
 ## Check for mention of Blakely | Thompson
 bltm = []
 for i in range(len(txt)):
     bltm.insert(i, re.findall("Blakely|Thompson", txt[i]))
 
+bldf = pd.DataFrame(bltm)
+bl = bldf.iloc[:,0]
+df['BlakelyThompson'] = bl
 
-
-## Extract Title
-title = re.findall("Title:(.*)", strings)
-
-## Extract Publication 
-pub = re.findall("Publication title:(.*)", strings)
-
-## Date
-date = re.findall("Publication date:(.*)", strings)
+df.to_csv('cleaned_text.csv')
 
 #############################################################################################
 ## Using NRC
@@ -155,11 +205,9 @@ for i in range(len(tk)):
 # plt.title('Average Sentiment of Articles')
 # maxfreq = n.max()
 
-df = pd.DataFrame(mean_sent)
-df = df.rename(columns={0:'text_sentiment'})
-df['title'] = title
-df['publication'] = pub
-df['date'] = date
+df['text_sentiment'] = mean_sent
+
+
 
 
 ##################################################################################################
@@ -218,9 +266,5 @@ df['title_fear'] = title_fear_score
 mean_title_sent = title_sent_score / twd
 
 df['mean_title_sent'] = mean_title_sent
-
-df['Burnet'] = bt
-df['Doherty'] = dy
-df['Blakely'] = bltm
 
 df.to_csv('Modelling_Sentiment.csv')

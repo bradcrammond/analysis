@@ -1,3 +1,5 @@
+import glob
+
 txt_files = glob.glob('newsstream/*.txt')
 
 for i in txt_files:
