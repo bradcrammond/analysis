@@ -1,0 +1,10 @@
+Sentiment Analysis for Doomsday Predictions
+
+Data Dictionary
+
+swd = words per sentence
+
+mwps = mean words per sentence in each article
+
+mean_sent = mean sentiment score per article calculated as the mean of the sentiment score for each sentence divided by the number of non-stop words in the sentence.
+

@@ -1,6 +1,6 @@
 ##################################################################################
 ## Let's try regex in python
-fhx@ZWY9acp*crv8qcr
+
 import os
 import re
 import pandas as pd
@@ -12,18 +12,18 @@ import numpy as np
 import nltk
 import matplotlib.pyplot as plt
 
-##################################################################################
+###############################################################
 ## Read in the text
 with open('compile.txt', encoding="utf8") as f:
     lines = f.readlines()
 
 strings = ''.join(lines)    ## convert to string
 
-####################################################################################
+###############################################################
 ## 
 ##                     Extract the relevant fields
 ##
-####################################################################################
+###############################################################
 
 ## Title
 title = re.findall("Title:(.*)", strings)
@@ -88,7 +88,18 @@ for i in range(len(tk)):                            ## Takes 3 minutes, relax
         x = len(tokenize.word_tokenize(tk[i][j]))
         swd[i][j] = x
 
-## TODO Mean words per sentence per article
+## Mean words per sentence per article
+
+mwps = np.zeros([a,1])          ## storage
+
+t = np.sum(swd, axis=1)         ## get number of words in article
+
+for i in range(len(swd)):
+    y = len(tk[i])             ## get the number of sentences
+    mwps[i] = t[i] / y         ## get average words per sentence
+
+df['MWPS'] = mwps
+
 
 ## Next is to remove stop words and then get a new count of the sentence
 stopw = np.zeros([a,b])
@@ -99,7 +110,17 @@ for i in range(len(tk)):                            ## Takes another 3 mins
         sw = len([d for d in w if d in stopwords.words('english')])
         stopw[i][j] = sw
 
-## TODO Mean non-stop words per sentence per article
+## Mean non-stop words per sentence per article
+
+mstopwps = np.zeros([a,1])          ## storage
+
+u = np.sum(stopw, axis=1)         ## get number of words in article
+
+for i in range(len(swd)):
+    y = len(tk[i])             ## get the number of sentences
+    mstopwps[i] = u[i] / y         ## get average words per sentence
+
+df['MStopWPS'] = mstopwps
 
 ## Number of sentence per article
 sentence_per_article = np.zeros([a,1])
@@ -181,6 +202,12 @@ for i in range(len(tk)):
 
         emot_count[i][j] = len(sent.affect_dict) ## count number of senti words
 
+np.savetxt('count of emotion words per sentence.csv', emot_count, delimiter=',')
+
+np.savetxt('sentiment score per sentence.csv', sent_score, delimiter=',')
+
+np.savetxt('fear score per sentence.csv', fear_score, delimiter=',')
+
 ## Last (maybe) I need the sentiment score divided by the number of words in the sentence (not including stop words)
 
 sent_on_stop = np.zeros([a,b])
@@ -191,10 +218,13 @@ for i in range(len(tk)):
 
 ms = np.sum(sent_on_stop, axis=1)
 
+
 mean_sent = np.zeros([a,1])
 
 for i in range(len(tk)):
     mean_sent[i] = ms[i] / len(tk[i])
+
+df['mean_sent'] = mean_sent
 
 ## Histogram to check the shape of it - looks quite nicely spread out.
 # n, bins, patches = plt.hist(x=mean_sent, bins='auto', color='#0504aa',
