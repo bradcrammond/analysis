@@ -3,36 +3,48 @@
 ##################################################################################################
 
 library(tidyverse)
+library(xlsx)
 
 rm(list = ls())
 
-##################################################################################################
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+#######################################################
 ## Import the Data
 
-df = read_csv('Modelling_Sentiment.csv') %>% rename('Index'='...1') %>% distinct(title, .keep_all = T)
+df <- read_csv("Modelling_Sentiment.csv") %>% rename("Index" = "X1")
 
-mean(df$mean_title_sent)
-mean(df$text_sentiment)
+## Drop everything that isn't about modelling
+
+df <- df %>% dplyr::filter(exclude == 0)
+
+df <- df %>% distinct(title, .keep_all = T)
+
 
 table(df$publication)
 
 ## Remove New Zealand newspapers
-
-df = df %>% filter(!str_detect(publication, 'New Zealand | Timaru | Taranaki'))
+nz = c("New Zealand", "Timaru", "Taranaki")
+df <- df %>% filter(!str_detect(publication, paste(nz, collapse = "|")))
 
 ## Tidy up the publication names
- # I have manually fixed some of the typos. This isn't ideal if I have to download new articles
+ # I have manually fixed some of the typos.
+ # This isn't ideal if I have to download new articles
 
-df$pub = gsub('(.*);.*', '\\1', df$publication)
+## Remove the trailing place of publication
+df$pub <- gsub("(.*);.*", "\\1", df$publication)
 
 table(df$pub)
 
-## Split them into left and right
+## Split them into left, right and ABC
+x <- data.frame(table(df$pub))
 
+write_csv(x, file = "publications.csv")
 
+murdoch <- read.xlsx("publications.xlsx", sheetName = "Murdoch")
 
-
-##################################################################################################
+x <- is.element(df$pub, murdoch)
+table(x)
+###############################################################
 ## The infectious disease models
 
 ##################################################################################################
