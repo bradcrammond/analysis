@@ -13,7 +13,7 @@ txt_files = glob.glob('newsstream/*.txt')
 
 ## Put all the files together
 
-with open("compile.txt", 'w') as nf:
+with open("data/compile.txt", 'w') as nf:
     for i in txt_files:
         with open(i, encoding='utf8') as f:
             lines = f.readlines()

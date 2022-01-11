@@ -1,5 +1,5 @@
-##################################################################################
-## Let's try regex in python
+#################################################################
+## Sentiment Analysis of Infectious Disease Modelling in News Media
 
 import os
 import re
@@ -14,14 +14,14 @@ import matplotlib.pyplot as plt
 
 ###############################################################
 ## Read in the text
-with open('compile.txt', encoding="utf8") as f:
+with open('data/compile.txt', encoding="utf8") as f:
     lines = f.readlines()
 
 strings = ''.join(lines)    ## convert to string
 
 ###############################################################
 ## 
-##                     Extract the relevant fields
+##                 Extract the relevant fields
 ##
 ###############################################################
 
@@ -297,4 +297,4 @@ mean_title_sent = title_sent_score / twd
 
 df['mean_title_sent'] = mean_title_sent
 
-df.to_csv('Modelling_Sentiment.csv')
+df.to_csv('data/Modelling_Sentiment.csv')
