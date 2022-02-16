@@ -6,7 +6,10 @@
 3. Then run `02_sentiment_analysis.py.`
  - This outputs `Modelling_Sentiment.csv` to `data`
 
-4. The statistical analysis is performed in R.
- - work through `03_stat_analysis.R`
+4. There is some data cleaning to do before the stats can be run
+ - `03_data_prep.R` cleans up the publication names and adds the publication owners
+
+5. The statistical analysis is performed in R.
+ - work through `04_statistical_analysis.R`
 
 5. And that's it!

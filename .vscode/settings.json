@@ -1,6 +1,5 @@
 {
     "editor.autoClosingBrackets": "beforeWhitespace",
     "editor.bracketPairColorization.enabled": true,
-    "python.pythonPath": "/bin/python",
     "jupyter.jupyterServerType": "local"
 }
